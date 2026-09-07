@@ -1,0 +1,13 @@
+---
+ &inputph
+  tr2_ph=2.0d-14,
+  prefix='gan',
+  amass(1)=69.723,
+  amass(2)=14.007,
+  outdir='./',
+  fildyn='gan.dyn',
+  fildvscf='dvscf'
+  ldisp=.true.,
+  epsil=.true.,
+  nq1=4, nq2=4, nq3=4
+ /

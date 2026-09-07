@@ -1,0 +1,34 @@
+&control
+    calculation='scf',
+    prefix='gan',
+    restart_mode='from_scratch',
+    pseudo_dir='./',
+    outdir='./',
+    tprnfor=.true.,
+    tstress=.true.,
+ /
+ &system
+    ibrav    = 4,
+    celldm(1)=6.02,
+    celldm(3)=1.625,
+    nat      = 4,
+    ntyp     = 2,
+    ecutwfc  = 80,
+    ecutrho     = 360.0,
+ /
+ &electrons
+    diagonalization='david',
+    mixing_beta=0.7,
+    conv_thr=1.0d-14,
+    diago_full_acc = .true.,
+ /
+ATOMIC_SPECIES
+  Ga  69.723   Ga-LDA.upf
+  N   14.007   N-LDA.upf
+ATOMIC_POSITIONS crystal
+Ga               0.6666666667        0.3333333333        0.0000197759
+N                0.6666666667        0.3333333333        0.3764094461
+Ga               0.3333333333        0.6666666667        0.5000197759
+N                0.3333333333        0.6666666667        0.8764094461
+K_POINTS automatic
+ 20 20 20 0 0 0
