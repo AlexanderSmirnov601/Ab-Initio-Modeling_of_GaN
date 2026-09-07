@@ -8,7 +8,7 @@ to fine grids with the EPW module, and an iterative solution of the Boltzmann tr
 for the temperature-dependent mobility. The complete set of input files, job scripts and
 pseudopotentials for the LDA calculation and for a later PBE rerun is included, together with
 the interpolated band and phonon data, the converged mobility output and the figures. The
-write-up is in [`docs/report.pdf`](docs/report.pdf).
+write-up is in [`report.pdf`](report.pdf).
 
 ![GaN band structure, LDA](results/lda/band_structure.png)
 
@@ -35,7 +35,7 @@ technology computer-aided design of devices relies on.
 | `results/lda/` | Wannier-interpolated bands along Γ–M, Γ–K, Γ–A (`gan_band.dat`, `.kpt`, `.labelinfo.dat`, `.gnu`), EPW bands and phonons along M–Γ–A (`band.eig`, `phband.freq`), the converged hole-mobility output (`epw_hole_mobility.out`) and the figures. |
 | `results/pbe/` | interpolated bands and phonons from the PBE rerun and its band-structure figure. |
 | `plot_phonon_dispersion.py` | plots `phband.freq` along the path. |
-| `docs/report.pdf` | the report: theory, implementation, results and discussion. |
+| [`report.pdf`](report.pdf) | the report: theory, implementation, results and discussion. |
 
 Run-time output (wavefunctions, charge density, `dvscf` files, roughly 130 MB per run) is not
 included.
