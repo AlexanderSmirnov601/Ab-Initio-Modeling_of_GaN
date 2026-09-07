@@ -31,15 +31,14 @@ technology computer-aided design of devices relies on.
 |---|---|
 | `relax/` | variable-cell relaxation of the wurtzite cell (`varicell.in`, job script, ONCV LDA pseudopotentials). |
 | `lda/` | the LDA workflow: `scf.in`, `ph.in`, `nscf.in`, the EPW post-processing script `pp.py` that collects the phonon output into `save/`, the three EPW inputs (`epw1.in` Wannierization and band/phonon interpolation, `epw2.in` hole mobility, `epw3.in` electron mobility), the M–Γ–A path `MGA.txt`, the Slurm job scripts and the ONCV LDA pseudopotentials. |
-| `pbe/` | the same workflow rerun with ONCV PBE pseudopotentials and denser coarse grids. |
+| `pbe/` | the same workflow with ONCV PBE pseudopotentials. |
 | `results/lda/` | Wannier-interpolated bands along Γ–M, Γ–K, Γ–A (`gan_band.dat`, `.kpt`, `.labelinfo.dat`, `.gnu`), EPW bands and phonons along M–Γ–A (`band.eig`, `phband.freq`), the converged hole-mobility output (`epw_hole_mobility.out`) and the figures. |
 | `results/pbe/` | interpolated bands and phonons from the PBE rerun and its band-structure figure. |
 | `plot_phonon_dispersion.py` | plots `phband.freq` along the path. |
 | `docs/report.pdf` | the report: theory, implementation, results and discussion. |
 
-The input files are the working copies as left on the cluster after the last runs. Large
-run-time output (wavefunctions, charge density, `dvscf` files, roughly 130 MB per run) is not
-included; everything needed to regenerate it is.
+Run-time output (wavefunctions, charge density, `dvscf` files, roughly 130 MB per run) is not
+included.
 
 ## Method
 
@@ -66,36 +65,47 @@ the coupling and the LO–TO splitting at Γ are treated separately through the 
 and Born effective charges (`epsil` in `ph.x`, `lpolar` in EPW). Electron–phonon calculations
 in EPW require norm-conserving pseudopotentials [5]; ONCV pseudopotentials are used throughout.
 
-## Computational details
+## Workflow
 
-- **Cell.** Wurtzite GaN (`ibrav = 4`, four atoms), relaxed with `vc-relax` at 100 Ry cutoff on
-  an 8 × 8 × 8 k-grid: a = 6.02 bohr, c/a = 1.625 against the experimental 6.026 bohr and
-  1.626 [6]. These lattice parameters are used in all subsequent inputs.
-- **LDA workflow** (`lda/`): SCF with 80 Ry cutoff, DFPT with `epsil = .true.` and
-  `ldisp = .true.`, `pp.py` to assemble the `save/` directory, NSCF on the coarse k-grid of EPW.
-  Wannierization onto 14 bands from Ga sp³ and N p projections with the 12 Ga d bands excluded
-  (`bands_skipped`), band and phonon interpolation along M–Γ–A and a Wannier90 band plot along
-  Γ–M, Γ–K, Γ–A. Mobility by the iterative BTE with `lpolar`, a carrier density of 10¹³ cm⁻³,
-  20 × 20 × 20 fine k- and q-grids and a 0.4 eV window for holes (`epw2.in`), 30 × 30 × 30 grids
-  and a 0.3 eV window for electrons (`epw3.in`).
-- **PBE rerun** (`pbe/`): 8 × 8 × 8 SCF, 4 × 4 × 4 q-grid with `tr2_ph = 2 × 10⁻¹⁴`, explicit
-  4 × 4 × 4 NSCF grid, 4 × 4 × 4 coarse EPW grids, thirteen temperatures from 200 to 500 K.
-- Runs on a Slurm cluster with a Spack build of Quantum ESPRESSO 7.3.1 and EPW 5.8.1; the job
-  scripts give the resources used for each step.
+1. **Structural relaxation.** Variable-cell relaxation (`vc-relax`, `relax/varicell.in`) of the
+   four-atom wurtzite cell establishes the equilibrium lattice parameters used in every later
+   step.
+2. **Self-consistent calculation.** `pw.x` on an 8 × 8 × 8 k-point grid (`scf.in`) produces the
+   charge density for the phonon and electron–phonon steps.
+3. **Phonons.** `ph.x` on a 4 × 4 × 4 q-grid (`ph.in`) with the DFPT threshold relaxed to
+   `tr2_ph = 10⁻¹⁴` to keep the run time manageable; `epsil = .true.` gives the dielectric
+   tensor and Born effective charges that supply the non-analytic part of the dynamical matrix
+   for the LO–TO splitting of this polar crystal, with the acoustic sum rule enforced. `pp.py`
+   collects the dynamical matrices and `dvscf` files into the `save/` directory EPW reads.
+4. **Non-self-consistent calculation.** `pw.x` on the 4 × 4 × 4 k-grid (`nscf.in`) that EPW uses
+   as its coarse electronic grid.
+5. **Wannierization and interpolation** (`epw1.in`). Initial projections of Ga sp³ and N p
+   orbitals; band structure along Γ→M, Γ→K, Γ→A and phonon dispersion along M→Γ→A
+   (`MGA.txt`).
+6. **Mobility** (`epw2.in` for holes, `epw3.in` for electrons). Electron–phonon matrix elements
+   interpolated onto fine k- and q-grids and the Boltzmann transport equation solved iteratively
+   for the temperature-dependent drift mobility, with the polar (Fröhlich) coupling included.
+
+Norm-conserving ONCV pseudopotentials are used throughout, as EPW requires [5]. The
+calculations were first done with LDA pseudopotentials (`lda/`) and repeated with PBE
+pseudopotentials (`pbe/`) for comparison. Each step is a Slurm job on a cluster running a
+Spack build of Quantum ESPRESSO 7.3.1 and EPW 5.8.1.
 
 ## Results
 
+**Lattice parameters.** The relaxation gives a = 6.02 bohr and c/a = 1.625, against the
+experimental 6.026 bohr and 1.626 [6].
+
 **Band structure.** The LDA calculation gives a direct gap of 2.11 eV at Γ, within 1.4 % of the
-published LDA value of 2.14 eV [7] and, as expected for LDA, well below the experimental 3.4 eV.
-The PBE rerun gave 1.96 eV, further from experiment; the report attributes this to the set-up
-of that run and keeps it for transparency. Interpolated band energies are in
-`results/lda/gan_band.dat` and `results/pbe/gan_band.dat`.
+published LDA value of 2.14 eV [7] and, as is well documented for LDA, well below the
+experimental 3.4 eV. The PBE calculation gave 1.96 eV, further from experiment, most likely
+because of an improper set-up of its initial conditions; it is kept for transparency.
+Interpolated band energies are in `results/lda/gan_band.dat` and `results/pbe/gan_band.dat`.
 
 ![GaN band structure, PBE rerun](results/pbe/band_structure.png)
 
 **Phonon dispersion.** Twelve branches along M–Γ–A from the EPW interpolation, with the
-LO–TO splitting at Γ from the polar correction (`results/lda/phband.freq`, frequencies as
-written by EPW). The branch ordering and the gap between the acoustic and optical manifolds
+LO–TO splitting at Γ from the polar correction (`results/lda/phband.freq`). The branch ordering and the gap between the acoustic and optical manifolds
 follow the measured dispersion of hexagonal GaN [8].
 
 ![GaN phonon dispersion, LDA](results/lda/phonon_dispersion.png)
@@ -122,8 +132,8 @@ the reference experimental value of roughly 1240 cm²/Vs [9]. Both carriers show
 temperature dependence reported for GaN from the same method [10]: the electron mobility falls
 from about 1500 cm²/Vs at 200 K to about 250 cm²/Vs at 500 K, and the hole mobility from
 108 to 34 cm²/Vs. The agreement in functional form indicates that the electron–phonon coupling
-is captured; the underestimate is attributed in the report to the sampling density of the
-coarse grids and to the pseudopotential approximation.
+physics is captured by the framework; the underestimate most likely originates from the
+sampling density and the pseudopotential approximation.
 
 ![electron mobility](results/lda/electron_mobility.png)
 
@@ -141,8 +151,8 @@ sbatch EPW.sh                   # epw.x with epw1.in, then epw2.in and epw3.in
 ```
 
 `EPW.sh` reads `epw.in`; copy the required stage to that name before submitting. The
-relaxation in `relax/` is run the same way with `Lattice_constant.sh`. The PBE rerun in `pbe/`
-uses the identical sequence.
+relaxation in `relax/` is run the same way with `Lattice_constant.sh`, and `pbe/` uses the
+identical sequence.
 
 ## References
 
